@@ -100,17 +100,13 @@ void CViewDlg::OnDropFiles(HDROP hDropInfo)
 	{
 		// 只取第一个
 		::DragQueryFile(hDropInfo, 0, szPath, _MAX_PATH);
-		SRUNONUI(
-			{
-				DWORD Code = ::GetFileAttributes(szPath);
-				if (Code == INVALID_FILE_ATTRIBUTES)
-					return;
-				if ((Code & FILE_ATTRIBUTE_DIRECTORY) != 0)
-					_tcscat((TCHAR*)szPath, _T("\\uires.idx"));
-				if (!CAppManager::getSingleton().LoadSkin(szPath))
-					CAppManager::getSingleton().ShowDlgMain(SW_SHOW);
-			}
-		);
+		DWORD Code = ::GetFileAttributes(szPath);
+		if (Code == INVALID_FILE_ATTRIBUTES)
+			return;
+		if ((Code & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			_tcscat((TCHAR*)szPath, _T("\\uires.idx"));
+		if (!CAppManager::getSingleton().LoadSkin(szPath))
+			CAppManager::getSingleton().ShowDlgMain(SW_SHOW);
 	}
 	::DragFinish(hDropInfo);
 }
@@ -124,10 +120,7 @@ void CViewDlg::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	else if (nChar == VK_F5)
 	{
-		SetMsgHandled(TRUE);
-		SRUNONUI(
-			CAppManager::getSingleton().RefreshSkin();
-		);
+		CAppManager::getSingleton().RefreshSkin();
 	}
 }
 

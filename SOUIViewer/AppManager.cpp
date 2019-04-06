@@ -43,19 +43,20 @@ BOOL CAppManager::LoadSkin(LPCTSTR lpcSkin)
 	if (!lpcSkin || _tcslen(lpcSkin) == 0) return FALSE;
 	TCHAR szBuf[MAX_PATH] = { 0 };
 	::PathCombine(szBuf, m_AppPath.c_str(), lpcSkin);
-	TString strSkin = szBuf;
-	if (strSkin.empty()) return FALSE;
+	SStringT strSkin = szBuf;
+	if (strSkin.IsEmpty()) return FALSE;
 
-	size_t ps = strSkin.find_last_of(_T("\\"));
+	size_t ps = strSkin.ReverseFind(_T('\\'));
 	if (ps == TString::npos) return FALSE;
-	TString strPath = strSkin.substr(0, ps);
+	SStringT strPath = strSkin.Mid(0, ps);
 
-	if (strPath.empty())
+	if (strPath.IsEmpty())
 		return FALSE;
 
 	// 释放已加载窗口
-	for (auto pdlg : m_Dlgs)
+	for (std::vector<CViewDlg*>::iterator it = m_Dlgs.begin();it != m_Dlgs.end();it++)
 	{
+		CViewDlg *pdlg = *it;
 		pdlg->DestroyWindow();
 		delete pdlg;
 	}
@@ -78,14 +79,14 @@ BOOL CAppManager::LoadSkin(LPCTSTR lpcSkin)
 	CAutoRefPtr<IResProvider>   pResProvider;
 	BOOL	bLoaded = FALSE;
 	CreateResProvider(RES_FILE, (IObjRef**)&pResProvider);
-	bLoaded = pResProvider->Init((LPARAM)strPath.c_str(), 0);
+	bLoaded = pResProvider->Init((LPARAM)(LPCTSTR)strPath, 0);
 	SASSERT(bLoaded);
 
 	m_AppUI->AddResProvider(pResProvider);
 
 	pugi::xml_document xmlDoc;
-	TString strView = strPath + _T("\\view.xml");
-	if (xmlDoc.load_file(strView.c_str(), pugi::parse_default, pugi::encoding_utf8))
+	SStringT strView = strPath + _T("\\view.xml");
+	if (xmlDoc.load_file(strView, pugi::parse_default, pugi::encoding_utf8))
 	{
 		// 加载view.xml定义LAYOUT
 		pugi::xml_node xmlRoot = xmlDoc.child(L"root");
@@ -104,7 +105,7 @@ BOOL CAppManager::LoadSkin(LPCTSTR lpcSkin)
 			xmlView = xmlView.next_sibling();
 		}
 	}
-	else if (xmlDoc.load_file(strSkin.c_str(), pugi::parse_default, pugi::encoding_utf8))
+	else if (xmlDoc.load_file(strSkin, pugi::parse_default, pugi::encoding_utf8))
 	{
 		// 加载第一个layout
 		pugi::xml_node xmlNode = xmlDoc.child(_T("resource")).child(_T("LAYOUT")).child(_T("file"));
@@ -170,7 +171,7 @@ BOOL CAppManager::PushDlg(CViewDlg* pDlg, BOOL bCheckMain)
 BOOL CAppManager::PopDlg(CViewDlg* pDlg, BOOL bCheckMain)
 {
 	BOOL bRet = FALSE;
-	for (auto it = m_Dlgs.begin(); it != m_Dlgs.end();)
+	for (std::vector<CViewDlg*>::iterator it = m_Dlgs.begin(); it != m_Dlgs.end();)
 	{
 		if (pDlg == *it)
 		{
@@ -192,8 +193,9 @@ BOOL CAppManager::ClearDlg(BOOL bDelete /*= TRUE*/)
 {
 	if (bDelete)
 	{
-		for (auto pDlg : m_Dlgs)
+		for (std::vector<CViewDlg*>::iterator it = m_Dlgs.begin(); it != m_Dlgs.end();)
 		{
+			CViewDlg *pDlg = *it;
 			pDlg->OnClose();
 			delete pDlg;
 		}
